@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK from zip
 on:
   push:
   workflow_dispatch:
@@ -7,7 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -o HaNeNaLauncher.zip -d proj
+      - name: Zip kholo
+        run: |
+          mkdir -p /tmp/proj
+          unzip -q "$(ls *.zip | head -n1)" -d /tmp/proj
+          echo "DIR=$(dirname "$(find /tmp/proj -name settings.gradle.kts | head -n1)")" >> $GITHUB_ENV
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -15,9 +19,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
-      - run: gradle assembleDebug --no-daemon
-        working-directory: proj
+      - name: APK banao
+        working-directory: ${{ env.DIR }}
+        run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: ArcLauncher-APK
-          path: proj/app/build/outputs/apk/debug/app-debug.apk
+          name: HaNeNaLauncher-APK
+          path: ${{ env.DIR }}/app/build/outputs/apk/debug/*.apk
